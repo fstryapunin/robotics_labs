@@ -1,0 +1,4 @@
+{
+    "terminal.integrated.inheritEnv": false,
+    "python.terminal.activateEnvironment": true
+}
