@@ -44,6 +44,8 @@ class TestSO3(unittest.TestCase):
         self.assertEqual(self.so3_from_exp(v), compute_so3_through_log(v))
         v = np.array([0, 0, np.pi])
         self.assertEqual(self.so3_from_exp(v), compute_so3_through_log(v))
+        v = np.array([0, np.pi, 0])
+        self.assertEqual(self.so3_from_exp(v), compute_so3_through_log(v))
         v = np.array([np.pi, 0, 0])
         self.assertEqual(self.so3_from_exp(v), compute_so3_through_log(v))
 

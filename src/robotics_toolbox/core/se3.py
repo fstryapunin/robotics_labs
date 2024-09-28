@@ -20,7 +20,7 @@ class SE3:
     def __init__(
         self, translation: ArrayLike | None = None, rotation: SO3 | None = None
     ) -> None:
-        """Crete an SE3 transformation. Identity is the default."""
+        """Create an SE3 transformation. Identity is the default."""
         super().__init__()
         self.translation = (
             np.asarray(translation) if translation is not None else np.zeros(3)
@@ -30,20 +30,19 @@ class SE3:
 
     def __mul__(self, other: SE3) -> SE3:
         """Compose two transformation, i.e., self * other"""
-        # todo: HW01: implement composition of two transformation.
-        return SE3()
+        return SE3(np.add(self.rotation.act(other.translation), self.translation), self.rotation * other.rotation)
 
     def inverse(self) -> SE3:
         """Compute inverse of the transformation"""
         # todo: HW1 implement inverse
-        return SE3()
+        inverseRotation = self.rotation.inverse()
+        return SE3(np.multiply(inverseRotation.act(self.translation), -1), inverseRotation)
 
     def act(self, vector: ArrayLike) -> np.ndarray:
         """Rotate given 3D vector by this transformation."""
         v = np.asarray(vector)
         assert v.shape == (3,)
-        # todo: HW1 implement transformation of a given vector
-        return v
+        return np.add(self.rotation.act(v), self.translation)
 
     def set_from(self, other: SE3):
         """Copy the properties into current instance."""

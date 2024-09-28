@@ -43,20 +43,18 @@ class SE2:
 
     def __mul__(self, other: SE2) -> SE2:
         """Compose two transformation, i.e., self * other"""
-        # todo: HW01: implement composition of two transformation.
-        return SE2()
+        return SE2(np.add(self.rotation.rot @ other.translation, self.translation), self.rotation * other.rotation)
 
     def inverse(self) -> SE2:
         """Compute inverse of the transformation. Do not use np.linalg.inv."""
-        # todo: HW1 implement inverse
-        return SE2()
+        inverseRotation = self.rotation.inverse()
+        return SE2(np.multiply(inverseRotation.rot @ self.translation, -1), inverseRotation)
 
     def act(self, vector: ArrayLike) -> np.ndarray:
         """Transform given 2D vector by this SE2 transformation."""
         v = np.asarray(vector)
         assert v.shape == (2,)
-        # todo: HW1 implement transformation of a given vector
-        return v
+        return np.add(self.rotation.rot @ vector, self.translation)
 
     def set_from(self, other: SE2):
         """Copy the properties into current instance."""
@@ -69,6 +67,13 @@ class SE2:
         h[:2, :2] = self.rotation.rot
         h[:2, 2] = self.translation
         return h
+    
+    @staticmethod
+    def from_homogenous(homogenous: np.ndarray) -> SE2:
+        assert homogenous.shape == (3, 3)
+        translation = [homogenous[0][2], homogenous[1][2]]
+        rotation = SO2(np.array([[homogenous[0][0], homogenous[0][1]], [homogenous[1][0], homogenous[1][1]]]))
+        return SE2(translation, rotation)
 
     def __eq__(self, other: SE2) -> bool:
         """Returns true if two transformations are almost equal."""
