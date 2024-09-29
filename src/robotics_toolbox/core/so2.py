@@ -16,17 +16,23 @@ class SO2:
     """This class represents an SO2 rotations internally represented by rotation
     matrix."""
 
-    def __init__(self, argument: float | np.ndarray = 0.0 ) -> None:
+    def __init__(self, angle: float | np.ndarray = 0.0 ) -> None:
         """Creates a rotation transformation that rotates vector by a given angle, that
         is expressed in radians. Rotation matrix .rot is used internally, no other
         variables can be stored inside the class."""
         super().__init__()
-        if(isinstance(argument, float)):
+        
+        if(isinstance(angle, float)):
             self.rot: np.ndarray = np.array([
-                [np.cos(argument), -1 * np.sin(argument)], 
-                [np.sin(argument), np.cos(argument)]])
-        if(isinstance(argument, np.ndarray)):
-            self.rot = argument
+                [np.cos(angle), -1 * np.sin(angle)], 
+                [np.sin(angle), np.cos(angle)]])
+            return
+        if(isinstance(angle, np.ndarray)):
+            assert angle.shape == (2, 2)
+            self.rot = angle
+            return
+        
+        raise Exception("Wrong argmument type provided to SO2 constrcutor " + str(type(angle)))
 
     def __mul__(self, other: SO2) -> SO2:
         """Compose two rotations, i.e., self * other"""
@@ -40,7 +46,6 @@ class SO2:
     def inverse(self) -> SO2:
         """Return inverse of the transformation. Do not change internal property of the
         object."""
-        # todo: HW01: implement inverse, do not use np.linalg.inverse()
         return SO2(self.rot.transpose())
 
     def act(self, vector: ArrayLike) -> np.ndarray:
