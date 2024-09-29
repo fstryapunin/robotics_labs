@@ -16,18 +16,18 @@ class SO2:
     """This class represents an SO2 rotations internally represented by rotation
     matrix."""
 
-    def __init__(self, angle: float | np.ndarray = 0.0 ) -> None:
+    def __init__(self, angle: float | ArrayLike = 0.0 ) -> None:
         """Creates a rotation transformation that rotates vector by a given angle, that
         is expressed in radians. Rotation matrix .rot is used internally, no other
         variables can be stored inside the class."""
         super().__init__()
-        
+
         if(isinstance(angle, float)):
             self.rot: np.ndarray = np.array([
                 [np.cos(angle), -1 * np.sin(angle)], 
                 [np.sin(angle), np.cos(angle)]])
             return
-        if(isinstance(angle, np.ndarray)):
+        if(isinstance(angle, ArrayLike)):
             assert angle.shape == (2, 2)
             self.rot = angle
             return
