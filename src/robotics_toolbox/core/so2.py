@@ -16,20 +16,21 @@ class SO2:
     """This class represents an SO2 rotations internally represented by rotation
     matrix."""
 
-    def __init__(self, angle: float = 0.0) -> None:
+    def __init__(self, argument: float | np.ndarray = 0.0 ) -> None:
         """Creates a rotation transformation that rotates vector by a given angle, that
         is expressed in radians. Rotation matrix .rot is used internally, no other
         variables can be stored inside the class."""
         super().__init__()
-        self.rot: np.ndarray = np.array([
-            [np.cos(angle), -1 * np.sin(angle)], 
-            [np.sin(angle), np.cos(angle)]])
+        if(isinstance(argument, float)):
+            self.rot: np.ndarray = np.array([
+                [np.cos(argument), -1 * np.sin(argument)], 
+                [np.sin(argument), np.cos(argument)]])
+        if(isinstance(argument, np.ndarray)):
+            self.rot = argument
 
     def __mul__(self, other: SO2) -> SO2:
         """Compose two rotations, i.e., self * other"""
-        newRotation = SO2()
-        newRotation.rot = self.rot.dot(other.rot)
-        return newRotation
+        return SO2(self.rot.dot(other.rot))
 
     @property
     def angle(self) -> float:
@@ -40,9 +41,7 @@ class SO2:
         """Return inverse of the transformation. Do not change internal property of the
         object."""
         # todo: HW01: implement inverse, do not use np.linalg.inverse()
-        inverseRotation = SO2()
-        inverseRotation.rot = self.rot.transpose()
-        return inverseRotation
+        return SO2(self.rot.transpose())
 
     def act(self, vector: ArrayLike) -> np.ndarray:
         """Rotate given vector by this transformation."""
