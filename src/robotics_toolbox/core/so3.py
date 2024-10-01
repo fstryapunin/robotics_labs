@@ -29,25 +29,36 @@ class SO3:
         representation of the rotation."""
         v = np.asarray(rot_vector)
         assert v.shape == (3,)
-        t = SO3()
-        # todo HW01: implement Rodrigues' formula, t.rot = ...
-        return t
 
-    def log(self) -> np.ndarray:
+        angle = np.linalg.norm(v)
+        axis = np.multiply(v, 1 / angle)
+        scew_symmetric = SO3.to_skew_symmetric(axis)
+
+        identity = np.identity(3)
+        sinpart = np.multiply(-1 * np.sin(angle), scew_symmetric)
+        cospart = np.multiply(1 - np.cos(angle), scew_symmetric @ scew_symmetric)
+
+        return SO3(identity + sinpart + cospart)
+
+    def log(self) -> np.ndarray | None:
         """Compute rotation vector from this SO3"""
-        # todo HW01: implement computation of rotation vector from this SO3
-        v = np.zeros(3)
-        return v
+        if(np.array_equal(np.identity(3), self.rot)):
+            return np.zeros(3)
+        
+        trace = np.trace(self.rot)
+        angle = np.arccos((1/2)*(trace - 1))
+        vector = np.asarray([item * angle for item in SO3.from_skew_symmetric(np.multiply(1/(2 * np.sin(angle)), self.rot - self.rot.transpose()))])
+
+        return vector
+    
 
     def __mul__(self, other: SO3) -> SO3:
         """Compose two rotations, i.e., self * other"""
-        # todo: HW01: implement composition of two rotation.
-        return SO3()
+        return SO3(self.rot @ other.rot)
 
     def inverse(self) -> SO3:
         """Return inverse of the transformation."""
-        # todo: HW01: implement inverse, do not use np.linalg.inverse()
-        return SO3()
+        return SO3(self.rot.transpose())
 
     def act(self, vector: ArrayLike) -> np.ndarray:
         """Rotate given vector by this transformation."""
@@ -107,6 +118,25 @@ class SO3:
         """
         # todo: HW1opt: implement from euler angles
         raise NotImplementedError("Needs to be implemented")
+    
+    @staticmethod
+    def to_skew_symmetric(vector: ArrayLike) -> np.ndarray:
+        v_x = vector[0]
+        v_y = vector[1]
+        v_z = vector[2]
+        return np.asarray([[0, v_z, -1 * v_y], [-1 * v_z, 0, v_x], [v_y, -1 * v_x, 0]])
+    
+    @staticmethod
+    def from_skew_symmetric(matrix: ArrayLike) -> np.array:
+        return np.asarray([matrix[2][1], matrix[0][2], matrix[1][0]])
+
 
     def __hash__(self):
         return id(self)
+    
+    def __str__(self) -> str:
+        np.set_printoptions(precision=3)
+        return print(self.rot)
+    
+    def __repr__(self) -> str:
+        self.__str__()
