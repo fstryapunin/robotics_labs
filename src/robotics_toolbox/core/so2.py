@@ -27,7 +27,7 @@ class SO2:
                 [np.cos(angle), -1 * np.sin(angle)], 
                 [np.sin(angle), np.cos(angle)]])
             return
-        if(isinstance(angle, ArrayLike)):
+        if(angle.shape == (2,2)):
             assert angle.shape == (2, 2)
             self.rot = angle
             return
