@@ -27,8 +27,8 @@ class TestSpatialURDF(unittest.TestCase):
         # making pinocchio model for testing
         path = Path(inspect.getfile(PlanarManipulator)).parent / "robot_hw.urdf"
         student_mod, _, _ = pin.buildModelsFromUrdf(str(path))
+        
         student_data = student_mod.createData()
-
         if platform == "linux" or platform == "linux2":
             path = Path(__file__).parent / "pin_mod_pin_data.pickle"
             with open(path, "rb") as file:

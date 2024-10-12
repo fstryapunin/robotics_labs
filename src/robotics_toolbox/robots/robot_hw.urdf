@@ -1,15 +1,124 @@
 <robot name="simple_robot">
-
     <link name="base_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.3 0.3 0.3" />
+            </geometry>
+            <material name="Grey1">
+                <color rgba="1.0 1.0 1.0 0.2"/>
+            </material>
+        </visual>
     </link>
-
-    <joint name="joint0" type="fixed">
-        <origin xyz="0 0 0" rpy="0 0 0"/>
+    <joint name="revolute_1" type="revolute">
+        <origin xyz="0 0 0.15" rpy="0 0 0"/> <!-- Pose w.r.t. parent-->
         <parent link="base_link"/>
-        <child link="end_effector"/>
+        <child link="cylinder_1"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="30" velocity="1.0" lower="-1.57" upper="1.57" />
     </joint>
-
-    <link name="end_effector">
+    <link name="cylinder_1">
+        <visual>
+            <origin xyz="0 0 0.25" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.05" length="0.5"/>
+            </geometry>
+            <material name="Grey1">
+                <color rgba="1.0 1.0 1.0 0.2"/>
+            </material>
+        </visual>
     </link>
-
+    <joint name="fixed_2" type="fixed">
+        <origin xyz="0 0 0.5" rpy="0 0 0"/> <!-- Pose w.r.t. parent-->
+        <parent link="cylinder_1"/>
+        <child link="sphere_1"/>
+    </joint>    
+    <link name="sphere_1">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <sphere radius="0.06"/>
+            </geometry>
+            <material name="Red">
+                <color rgba="1.0 0.0 0.0 0.2"/>
+            </material>
+        </visual>
+    </link>
+    <joint name="revolute_2" type="revolute">
+        <origin xyz="0 0 0.0" rpy="0 0 0"/> <!-- Pose w.r.t. parent-->
+        <parent link="sphere_1"/>
+        <child link="cylinder_2"/>
+        <axis xyz="1 0 0"/>
+        <limit effort="30" velocity="1.0" lower="-1.57" upper="1.57" />
+    </joint>   
+    <link name="cylinder_2">
+        <visual>
+            <origin xyz="0 0 0.125" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.05" length="0.250"/>
+            </geometry>
+            <material name="Grey1">
+                <color rgba="1.0 1.0 1.0 0.2"/>
+            </material>
+        </visual>
+    </link>
+    <joint name="revolute_3" type="revolute">
+        <origin xyz="0 0 0.25" rpy="0 0 0"/> <!-- Pose w.r.t. parent-->
+        <parent link="cylinder_2"/>
+        <child link="cylinder_3"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="30" velocity="1.0" lower="-1.57" upper="1.57" />
+    </joint>
+    <link name="cylinder_3">
+        <visual>
+            <origin xyz="0 0 0.125" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.05" length="0.250"/>
+            </geometry>
+            <material name="Grey12">
+                <color rgba="1.0 1.0 1.0 0.2"/>
+            </material>
+        </visual>
+    </link>
+    <joint name="fixed_3" type="fixed">
+        <origin xyz="0 0 0.25" rpy="0 0 0"/> <!-- Pose w.r.t. parent-->
+        <parent link="cylinder_3"/>
+        <child link="sphere_2"/>
+    </joint>
+    <link name="sphere_2">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <sphere radius="0.06"/>
+            </geometry>
+            <material name="Red">
+                <color rgba="1.0 0.0 0.0 0.2"/>
+            </material>
+        </visual>
+    </link>
+    <joint name="revolute_4" type="revolute">
+        <origin xyz="0 0 0.0" rpy="0 0 0"/> <!-- Pose w.r.t. parent-->
+        <parent link="sphere_2"/>
+        <child link="cylinder_4"/>
+        <axis xyz="1 0 0"/>
+        <limit effort="30" velocity="1.0" lower="-1.57" upper="1.57" />
+    </joint>
+    <link name="cylinder_4">
+        <visual>
+            <origin xyz="0 0 0.125" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.05" length="0.250"/>
+            </geometry>
+            <material name="Grey12">
+                <color rgba="1.0 1.0 1.0 0.2"/>
+            </material>
+        </visual>
+    </link>
+    <joint name="fixed_5" type="fixed">
+        <origin xyz="0 0 0.25" rpy="0 0 0"/> <!-- Pose w.r.t. parent-->
+        <parent link="cylinder_4"/>
+        <child link="ee"/>
+    </joint>
+    <link name="ee">
+    </link>  
 </robot>

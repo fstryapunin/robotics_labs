@@ -8,11 +8,13 @@
 """Module for representing planar manipulator."""
 
 from __future__ import annotations
+from functools import reduce
+from typing import Union
 import numpy as np
 from numpy.typing import ArrayLike
 from shapely import MultiPolygon, LineString, MultiLineString
 
-from robotics_toolbox.core import SE2, SE3
+from robotics_toolbox.core import SE2, SE3, SO2
 from robotics_toolbox.robots.robot_base import RobotBase
 
 
@@ -70,6 +72,10 @@ class PlanarManipulator(RobotBase):
         """Return number of degrees of freedom."""
         return len(self.q)
 
+    @property
+    def joint_count(self) -> int:
+        return len(self.structure)
+
     def sample_configuration(self):
         """Sample robot configuration inside the configuration space. Will change
         internal state."""
@@ -86,15 +92,19 @@ class PlanarManipulator(RobotBase):
 
     def flange_pose(self) -> SE2:
         """Return the pose of the flange in the reference frame."""
-        # todo HW02: implement fk for the flange
-        return SE2()
+        transformations = [self.get_transformation_from_joint(joint_index) for joint_index in range(self.joint_count)]
+        return self.__get_ee_transformation(transformations)
 
     def fk_all_links(self) -> list[SE2]:
         """Compute FK for frames that are attached to the links of the robot.
         The first frame is base_frame, the next frames are described in the constructor.
         """
-        # todo HW02: implement fk
-        frames = []
+        frames = [self.base_pose]
+
+        for frame_index in range(self.joint_count):
+            transformations = [self.get_transformation_from_joint(joint_index) for joint_index in range(frame_index + 1)]
+            frames.append(self.__get_ee_transformation(transformations))
+
         return frames
 
     def _gripper_lines(self, flange: SE2):
@@ -169,3 +179,31 @@ class PlanarManipulator(RobotBase):
         return MultiLineString(
             (*gripper_lines, *zip(points[:-1], points[1:]))
         ).intersects(self.obstacles)
+    
+    def __get_list_of_joint_types(self) -> list[str]:
+        if type(self.structure) == str:
+            return self.structure.split("")
+        
+        return self.structure
+    
+    def __get_ee_transformation(self, transformations: list[SE2]) -> SE2:
+        return reduce(lambda se2_accumulator, se2 : se2_accumulator * se2, transformations, self.base_pose)
+    
+    def get_transformation_from_joint(self, joint_index: int) -> SE2:
+        q = self.q[joint_index]
+        param = self.link_parameters[joint_index]
+        joint_type = (self.__get_list_of_joint_types())[joint_index]
+        if joint_type == "R":
+            return self.get_se2_for_rotation_joint(q, param)
+        else:
+            return self.get_se2_for_prismatic_joint(q, param)
+
+    @staticmethod
+    def get_se2_for_prismatic_joint(extension: float, initial_rotation: float) -> SE2:
+        translation = [extension, 0]
+        return SE2(SO2(initial_rotation).act(translation), initial_rotation)
+    
+    @staticmethod
+    def get_se2_for_rotation_joint(rotation: float, link_length: float) -> SE2:
+        translation = [link_length, 0]
+        return SE2(SO2(rotation).act(translation), rotation)         
