@@ -134,21 +134,18 @@ class PlanarManipulator(RobotBase):
         """Computes jacobian of the manipulator for the given structure and
         configuration."""
         jac = []
-
-        fk_transforms = self.fk_all_links()[1:]
         joint_transforms = [self.get_transformation_from_joint(i) for i in range(self.joint_count)]
-            
+        fk_all_links = self.fk_all_links()
         for index in range(len(joint_transforms)):
-            base_to_joint_transform = fk_transforms[index]
             if self.structure[index] == "P":
-                jac_col = list(base_to_joint_transform.rotation.act((1, 0)))
+                jac_col = list(fk_all_links[index + 1].rotation.act((1, 0)))
                 jac_col.append(0)
                 jac.append(jac_col)
             else:
                 T_je = self.__reduce_transformations(joint_transforms[index : ], SE2(None, None))
                 t_je = T_je.translation
                 n = SO2(np.pi / 2).act(t_je)
-                n_s = list(self.fk_all_links()[index].rotation.act(n))
+                n_s = list(fk_all_links[index].rotation.act(n))
                 n_s.append(1)
                 jac.append(n_s)
 
