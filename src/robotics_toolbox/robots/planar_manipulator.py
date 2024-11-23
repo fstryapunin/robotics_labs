@@ -18,12 +18,11 @@ from copy import deepcopy
 from robotics_toolbox.core import SE2, SE3, SO2
 from robotics_toolbox.robots.robot_base import RobotBase
 
-
 class PlanarManipulator(RobotBase):
     def __init__(
         self,
         link_parameters: ArrayLike | None = None,
-        structure: list[str] | str | None = None,
+        structure: list[str] | None = None,
         base_pose: SE2 | None = None,
         gripper_length: float = 0.2,
     ) -> None:
@@ -131,35 +130,30 @@ class PlanarManipulator(RobotBase):
             ),
         )
 
-    def __get_jacobian_column_for_rotation_joint(self, joint_transform: SE2):
-        n = SO2(np.pi / 4).act(joint_transform.translation)
-        return np.append(joint_transform.rotation.inverse().act(n), [1])
-    
-    def __get_jacobian_column_for_prismatic_joint(self, joint_transform: SE2):
-        return np.append(np.flip(joint_transform.rotation.inverse().act([0, 1])), [0])
-
     def jacobian(self) -> np.ndarray:
         """Computes jacobian of the manipulator for the given structure and
         configuration."""
-        ee = self.flange_pose()
-        joint_transforms = self.fk_all_links()
         jac = []
 
-        for joint_index in range(self.joint_count):
-            joint_type = self.structure[joint_index]
-            joint_transform = joint_transforms[joint_index + 1]
-            if joint_type.lower() == 'p':
-                translation = np.flip(joint_transform.rotation.inverse().act([0, 1]))
-                jac.append(np.append(translation, [0]))
+        fk_transforms = self.fk_all_links()[1:]
+        joint_transforms = [self.get_transformation_from_joint(i) for i in range(self.joint_count)]
+            
+        for index in range(len(joint_transforms)):
+            base_to_joint_transform = fk_transforms[index]
+            if self.structure[index] == "P":
+                jac_col = list(base_to_joint_transform.rotation.act((1, 0)))
+                jac_col.append(0)
+                jac.append(jac_col)
             else:
-                transform = self.fk_from_index_to_ee(joint_index + 1)
-                print((joint_transform * transform).translation, ee.translation)
-                print(self.base_pose.rotation.angle + self.q[0], joint_transform.rotation.angle)
-                n = SO2(np.pi / 2).act(transform.translation)
-                jac.append(np.append(n, [1])) 
+                T_je = self.__reduce_transformations(joint_transforms[index : ], SE2(None, None))
+                t_je = T_je.translation
+                n = SO2(np.pi / 2).act(t_je)
+                n_s = list(self.fk_all_links()[index].rotation.act(n))
+                n_s.append(1)
+                jac.append(n_s)
 
-        print(np.asarray(jac).transpose())
         return np.asarray(jac).transpose()
+            
     
     def __finite_difference(self, delta: float, delta_vector, selector_function: Callable[[SE2], float]):
         copy_robot = deepcopy(self)
