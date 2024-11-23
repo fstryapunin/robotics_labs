@@ -9,10 +9,11 @@
 
 from __future__ import annotations
 from functools import reduce
-from typing import Union
+from typing import Callable, Union
 import numpy as np
 from numpy.typing import ArrayLike
 from shapely import MultiPolygon, LineString, MultiLineString
+from copy import deepcopy
 
 from robotics_toolbox.core import SE2, SE3, SO2
 from robotics_toolbox.robots.robot_base import RobotBase
@@ -93,7 +94,7 @@ class PlanarManipulator(RobotBase):
     def flange_pose(self) -> SE2:
         """Return the pose of the flange in the reference frame."""
         transformations = [self.get_transformation_from_joint(joint_index) for joint_index in range(self.joint_count)]
-        return self.__get_ee_transformation(transformations)
+        return self.__reduce_transformations(transformations, self.base_pose)
 
     def fk_all_links(self) -> list[SE2]:
         """Compute FK for frames that are attached to the links of the robot.
@@ -103,9 +104,13 @@ class PlanarManipulator(RobotBase):
 
         for frame_index in range(self.joint_count):
             transformations = [self.get_transformation_from_joint(joint_index) for joint_index in range(frame_index + 1)]
-            frames.append(self.__get_ee_transformation(transformations))
+            frames.append(self.__reduce_transformations(transformations, self.base_pose))
 
         return frames
+
+    def fk_from_index_to_ee(self, index: int) -> SE2:
+        transformations = [self.get_transformation_from_joint(joint_index) for joint_index in range(index, self.joint_count)]
+        return self.__reduce_transformations(transformations, SE2(None, None))
 
     def _gripper_lines(self, flange: SE2):
         """Return tuple of lines (start-end point) that are used to plot gripper
@@ -126,17 +131,55 @@ class PlanarManipulator(RobotBase):
             ),
         )
 
+    def __get_jacobian_column_for_rotation_joint(self, joint_transform: SE2):
+        n = SO2(np.pi / 4).act(joint_transform.translation)
+        return np.append(joint_transform.rotation.inverse().act(n), [1])
+    
+    def __get_jacobian_column_for_prismatic_joint(self, joint_transform: SE2):
+        return np.append(np.flip(joint_transform.rotation.inverse().act([0, 1])), [0])
+
     def jacobian(self) -> np.ndarray:
         """Computes jacobian of the manipulator for the given structure and
         configuration."""
-        jac = np.zeros((3, len(self.q)))
-        # todo: HW03 implement jacobian computation
-        return jac
+        ee = self.flange_pose()
+        joint_transforms = self.fk_all_links()
+        jac = []
+
+        for joint_index in range(self.joint_count):
+            joint_type = self.structure[joint_index]
+            joint_transform = joint_transforms[joint_index + 1]
+            if joint_type.lower() == 'p':
+                translation = np.flip(joint_transform.rotation.inverse().act([0, 1]))
+                jac.append(np.append(translation, [0]))
+            else:
+                transform = self.fk_from_index_to_ee(joint_index + 1)
+                print((joint_transform * transform).translation, ee.translation)
+                print(self.base_pose.rotation.angle + self.q[0], joint_transform.rotation.angle)
+                n = SO2(np.pi / 2).act(transform.translation)
+                jac.append(np.append(n, [1])) 
+
+        print(np.asarray(jac).transpose())
+        return np.asarray(jac).transpose()
+    
+    def __finite_difference(self, delta: float, delta_vector, selector_function: Callable[[SE2], float]):
+        copy_robot = deepcopy(self)
+        copy_robot.q = np.add(copy_robot.q, delta_vector)
+        return (selector_function(copy_robot.flange_pose()) - selector_function(self.flange_pose()))/ delta
 
     def jacobian_finite_difference(self, delta=1e-5) -> np.ndarray:
-        jac = np.zeros((3, len(self.q)))
-        # todo: HW03 implement jacobian computation
-        return jac
+
+        to_delta_vector = lambda q_i: [delta if q == q_i else 0 for q in range(self.joint_count)]
+        to_x: Callable[[SE2], float] = lambda t : t.translation[0]
+        to_y: Callable[[SE2], float] = lambda t : t.translation[1]
+        to_rot: Callable[[SE2], float] = lambda t : t.rotation.angle
+
+        jac = []
+        for i, selector in enumerate([to_x, to_y, to_rot]):
+            jac.append([])
+            for q_i in range(self.joint_count):
+                jac[i].append(self.__finite_difference(delta, to_delta_vector(q_i), selector))
+
+        return np.asarray(jac)
 
     def ik_numerical(
         self,
@@ -186,8 +229,8 @@ class PlanarManipulator(RobotBase):
         
         return self.structure
     
-    def __get_ee_transformation(self, transformations: list[SE2]) -> SE2:
-        return reduce(lambda se2_accumulator, se2 : se2_accumulator * se2, transformations, self.base_pose)
+    def __reduce_transformations(self, transformations: list[SE2], base) -> SE2:
+        return reduce(lambda se2_accumulator, se2 : se2_accumulator * se2, transformations, base)
     
     def get_transformation_from_joint(self, joint_index: int) -> SE2:
         q = self.q[joint_index]
