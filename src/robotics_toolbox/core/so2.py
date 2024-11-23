@@ -22,7 +22,7 @@ class SO2:
         variables can be stored inside the class."""
         super().__init__()
 
-        if(isinstance(angle, float)):
+        if(isinstance(angle, float) or isinstance(angle, int)):
             self.rot: np.ndarray = np.array([
                 [np.cos(angle), -1 * np.sin(angle)], 
                 [np.sin(angle), np.cos(angle)]])
