@@ -10,14 +10,13 @@
 from __future__ import annotations
 import numpy as np
 from numpy.typing import ArrayLike
-from typing import Union
 
 
 class SO2:
     """This class represents an SO2 rotations internally represented by rotation
     matrix."""
 
-    def __init__(self, arg: Union[float, np.ndarray] = 0.0) -> None:
+    def __init__(self, arg: float | np.ndarray = 0.0) -> None:
         """Creates a rotation transformation that rotates vector by a given angle, that
         is expressed in radians. Rotation matrix .rot is used internally, no other
         variables can be stored inside the class."""
