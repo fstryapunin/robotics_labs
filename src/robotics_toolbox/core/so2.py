@@ -10,42 +10,51 @@
 from __future__ import annotations
 import numpy as np
 from numpy.typing import ArrayLike
+from typing import Union
 
 
 class SO2:
     """This class represents an SO2 rotations internally represented by rotation
     matrix."""
 
-    def __init__(self, angle: float = 0.0) -> None:
+    def __init__(self, arg: Union[float, np.ndarray] = 0.0) -> None:
         """Creates a rotation transformation that rotates vector by a given angle, that
         is expressed in radians. Rotation matrix .rot is used internally, no other
         variables can be stored inside the class."""
         super().__init__()
-        # todo HW01: implement computation of rotation matrix from the given angle
-        self.rot: np.ndarray = np.zeros((2, 2))
+
+        if isinstance(arg, float):
+            self.rot: np.ndarray = np.array([
+                [np.cos(arg), -np.sin(arg)], 
+                [np.sin(arg), np.cos(arg)]])
+            return
+        if isinstance(arg, np.ndarray):
+            assert arg.shape == (2, 2), f"Matrix of incorrect shape {arg.shape} passed to SO2 constructor"
+            self.rot: np.ndarray = arg
+            return
+
+        raise Exception(f"Argument {arg} of unsupported type {type(arg).__name__} passed to SO2 constructor")
 
     def __mul__(self, other: SO2) -> SO2:
         """Compose two rotations, i.e., self * other"""
-        # todo: HW01: implement composition of two rotation.
-        pass
+        return SO2(self.rot @ other.rot)
 
     @property
     def angle(self) -> float:
         """Return angle [rad] from the internal rotation matrix representation."""
-        # todo: HW01: implement computation of the angle from rotation matrix self.rot.
-        angle = 0.0
-        return angle
+        return np.arccos(self.rot[0][0]) * np.sign(self.rot[1][0])
 
     def inverse(self) -> SO2:
         """Return inverse of the transformation. Do not change internal property of the
         object."""
-        # todo: HW01: implement inverse, do not use np.linalg.inverse()
-        pass
+        return SO2(self.rot.T.copy())
 
     def act(self, vector: ArrayLike) -> np.ndarray:
         """Rotate given vector by this transformation."""
         v = np.asarray(vector)
-        assert v.shape == (2,)
+
+        assert v.shape == (2,), f"Vector of incorrect shape {v.shape} passed to act method of SO2"
+
         return self.rot @ v
 
     def __eq__(self, other: SO2) -> bool:
