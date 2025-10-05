@@ -48,7 +48,7 @@ class SE2:
     def inverse(self) -> SE2:
         """Compute inverse of the transformation. Do not use np.linalg.inv."""
         invertedRotation = self.rotation.inverse()
-        invertedTranslation = np.multiply(-1, invertedRotation.act(self.translation))
+        invertedTranslation = -1 * invertedRotation.act(self.translation) 
         return SE2(invertedTranslation, invertedRotation)
 
     def act(self, vector: ArrayLike) -> np.ndarray:
