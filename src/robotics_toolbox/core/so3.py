@@ -68,7 +68,7 @@ class SO3:
     def act(self, vector: ArrayLike) -> np.ndarray:
         """Rotate given vector by this transformation."""
         v = np.asarray(vector)
-        assert v.shape == (3,)
+        assert v.shape == (3,), f"Vector {v} of incorrect shape {v.shape} passed to act method of SO3"
         return self.rot @ v
 
     def __eq__(self, other: SO3) -> bool:
