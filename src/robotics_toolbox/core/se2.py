@@ -33,7 +33,9 @@ class SE2:
         self.translation = (
             np.asarray(translation) if translation is not None else np.zeros(2)
         )
-        assert self.translation.shape == (2,)
+        
+        assert self.translation.shape == (2,), f"Vector {self.translation} of incorrect shape {self.translation.shape} passed to ctor of SE2"
+        
         if isinstance(rotation, SO2):
             self.rotation = rotation
         elif isinstance(rotation, float):
