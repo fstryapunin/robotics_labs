@@ -28,26 +28,42 @@ class SO3:
         """Compute SO3 transformation from a given rotation vector, i.e. exponential
         representation of the rotation."""
         v = np.asarray(rot_vector)
-        assert v.shape == (3,)
-        t = SO3()
-        # todo HW01: implement Rodrigues' formula, t.rot = ...
-        return t
+        assert v.shape == (3,), f"Vector {v} of incorrect shape {v.shape} passed to exp method of S03"
+
+        angle: float = np.linalg.norm(v) # type: ignore
+        axis = np.multiply(v, 1 / angle)
+
+        return SO3.from_angle_axis(angle, axis)
 
     def log(self) -> np.ndarray:
         """Compute rotation vector from this SO3"""
-        # todo HW01: implement computation of rotation vector from this SO3
-        v = np.zeros(3)
-        return v
+        if np.array_equal(self.rot, np.identity(3)):
+            return np.zeros(3)
+        
+        trace = np.trace(self.rot)
+        angle = np.arccos(0.5 * (trace - 1))
+        vector = None
+
+        if trace == -1:
+            if self.rot[2][2] != -1:
+                vector = (1 / np.sqrt(2 * (self.rot[2][2] + 1))) * np.array([self.rot[0][2], self.rot[1][2], self.rot[2][2] + 1])
+            elif self.rot[1][1] != -1:
+                vector = (1 / np.sqrt(2 * (self.rot[1][1] + 1))) * np.array([self.rot[0][1], self.rot[1][1] + 1, self.rot[2][1]])
+            elif self.rot[0][0] != -1:
+                vector = (1 / np.sqrt(2 * (self.rot[0][0] + 1))) * np.array([self.rot[0][0] + 1, self.rot[1][0], self.rot[2][0]])
+
+        skew_symmetric = (1 / (2 * np.sin(angle))) * (self.rot - self.rot.T)
+        vector = np.array([skew_symmetric[2][1], skew_symmetric[0][2], skew_symmetric[1][0]])
+
+        return angle * vector
 
     def __mul__(self, other: SO3) -> SO3:
         """Compose two rotations, i.e., self * other"""
-        # todo: HW01: implement composition of two rotation.
-        return SO3()
+        return SO3(self.rot @ other.rot)
 
     def inverse(self) -> SO3:
         """Return inverse of the transformation."""
-        # todo: HW01: implement inverse, do not use np.linalg.inverse()
-        return SO3()
+        return SO3(self.rot.T.copy())
 
     def act(self, vector: ArrayLike) -> np.ndarray:
         """Rotate given vector by this transformation."""
@@ -90,9 +106,17 @@ class SO3:
 
     @staticmethod
     def from_angle_axis(angle: float, axis: ArrayLike) -> SO3:
-        """Compute rotation from angle axis representation."""
-        # todo: HW1opt: implement from angle axis
-        raise NotImplementedError("Needs to be implemented")
+        v = np.asarray(axis)
+
+        assert v.shape == (3,), f"Vector {v} of incorrect shape {v.shape} passed to from_angle_axis method of S03"
+
+        skew_symmetric = np.array([
+            [0, -v[2], v[1]],
+            [v[2], 0, -v[0]],
+            [-v[1], v[0], 0]
+        ])
+
+        return SO3(np.identity(3) + np.sin(angle) * skew_symmetric + (1 - np.cos(angle)) * (skew_symmetric @ skew_symmetric))
 
     def to_angle_axis(self) -> tuple[float, np.ndarray]:
         """Compute angle axis representation from self."""
