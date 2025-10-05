@@ -52,7 +52,7 @@ class SO2:
         """Rotate given vector by this transformation."""
         v = np.asarray(vector)
 
-        assert v.shape == (2,), f"Vector of incorrect shape {v.shape} passed to act method of SO2"
+        assert v.shape == (2,), f"Vector {vector} of incorrect shape {v.shape} passed to act method of SO2"
 
         return self.rot @ v
 
