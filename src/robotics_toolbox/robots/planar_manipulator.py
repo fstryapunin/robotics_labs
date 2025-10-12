@@ -8,11 +8,13 @@
 """Module for representing planar manipulator."""
 
 from __future__ import annotations
+from functools import reduce
 import numpy as np
 from numpy.typing import ArrayLike
 from shapely import MultiPolygon, LineString, MultiLineString
 
 from robotics_toolbox.core import SE2, SE3
+from robotics_toolbox.core.so2 import SO2
 from robotics_toolbox.robots.robot_base import RobotBase
 
 
@@ -55,7 +57,7 @@ class PlanarManipulator(RobotBase):
         self.gripper_length = gripper_length
 
         # Robot configuration:
-        self.q = np.array([np.pi / 8] * n)
+        self.q: np.ndarray = np.array([np.pi / 8] * n)
         self.gripper_opening = 0.2
 
         # Configuration space
@@ -83,19 +85,37 @@ class PlanarManipulator(RobotBase):
     def configuration(self) -> np.ndarray | SE2 | SE3:
         """Get the robot configuration."""
         return self.q
+    
+    def get_transformations(self):
+        creation_functions = {
+            "R": self.get_transformation_for_rotation_joint,
+            "P": self.get_transformation_for_prismatic_joint
+        }
+
+        return [creation_functions[self.structure[joint_index]](self.link_parameters[joint_index], self.q[joint_index]) for joint_index in range(len(self.structure))]
+    
+    def __reduce_transformations(self, transformations: list[SE2], base) -> SE2:
+        return reduce(lambda se2_accumulator, se2 : se2_accumulator * se2, transformations, base)
+    
+    @staticmethod
+    def get_transformation_for_prismatic_joint(rotation: float, extention: float) -> SE2:
+        return SE2(SO2(rotation).act([extention, 0]), rotation)
+
+    @staticmethod
+    def get_transformation_for_rotation_joint(length: float, rotation: float) -> SE2:
+        return SE2(SO2(rotation).act([length, 0]), rotation)
 
     def flange_pose(self) -> SE2:
         """Return the pose of the flange in the reference frame."""
-        # todo HW02: implement fk for the flange
-        return SE2()
+        return self.__reduce_transformations(self.get_transformations(), self.base_pose)
 
     def fk_all_links(self) -> list[SE2]:
         """Compute FK for frames that are attached to the links of the robot.
         The first frame is base_frame, the next frames are described in the constructor.
         """
-        # todo HW02: implement fk
-        frames = []
-        return frames
+        transformations = self.get_transformations()
+
+        return [self.__reduce_transformations(transformations[:transformation_index], self.base_pose) for transformation_index in range(len(transformations) + 1)]
 
     def _gripper_lines(self, flange: SE2):
         """Return tuple of lines (start-end point) that are used to plot gripper
